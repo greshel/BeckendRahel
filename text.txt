@@ -1,0 +1,364 @@
+Project ini adalah aplikasi pendaftaran kelas atau bootcamp berbasis REST API
+menggunakan Laravel.
+
+Aplikasi ini dibuat untuk membantu pengguna melakukan pendaftaran kelas secara
+online. Pengguna dapat membuat akun, login, melihat daftar kelas, melihat detail
+kelas, mendaftar ke kelas, dan melihat kelas yang sudah didaftarkan.
+
+Setiap kelas memiliki beberapa informasi, yaitu:
+
+- judul kelas;
+- nama pengajar;
+- harga kelas;
+- jumlah kuota.
+
+Jika pengguna berhasil mendaftar, kuota kelas akan berkurang satu. Pengguna
+juga akan mendapatkan kode pendaftaran yang dibuat oleh sistem.
+
+## Integrasi API
+
+API pada project ini dihubungkan dan dicoba melalui Postman. Pengguna terlebih
+dahulu membuat akun atau melakukan login untuk memperoleh Bearer Token. Token
+itu kemudian dikirim pada endpoint yang membutuhkan akses user, misalnya saat
+mendaftar kelas, mengecek kelas yang diikuti, membuka profil, dan melakukan
+logout. Seluruh data kelas dan pendaftaran diproses oleh REST API Laravel lalu
+disimpan ke dalam database.
+
+## Struktur project
+
+API pada project ini dibagi menjadi beberapa bagian:
+
+- Route digunakan untuk menentukan alamat endpoint API.
+- Controller digunakan untuk mengatur proses API.
+- Model digunakan untuk menghubungkan aplikasi dengan database.
+- Migration digunakan untuk membuat tabel database.
+- Validation digunakan untuk memeriksa data yang dikirim oleh pengguna.
+
+File route API berada di:
+
+routes/api.php
+
+Controller yang digunakan:
+
+- UserController untuk register, login, profil, dan logout.
+- KelasController untuk mengatur data kelas dan pendaftaran kelas.
+
+Model yang digunakan:
+
+- User untuk data pengguna.
+- Kelas untuk data kelas.
+- Pendaftaran untuk data pendaftaran kelas.
+
+Validasi data masih ditulis langsung di dalam controller. Project ini belum
+menggunakan Form Request terpisah dan belum menggunakan API Resource. Data
+response dikirim langsung dalam bentuk JSON.
+
+## Data yang disimpan
+
+### 1. User
+
+Data user menyimpan nama, username, email, dan password. Password disimpan
+dalam bentuk terenkripsi agar lebih aman.
+
+### 2. Kelas
+
+Data kelas menyimpan judul, pengajar, harga, dan kuota.
+
+### 3. Pendaftaran
+
+Data pendaftaran menghubungkan user dengan kelas. Data ini menyimpan user,
+kelas, kode pendaftaran, dan status pendaftaran.
+
+Status pendaftaran yang tersedia adalah:
+
+- PENDING
+- SUKSES
+
+## Login dan token
+
+Project ini menggunakan Laravel Sanctum untuk login API. Sanctum membuat token
+untuk user setelah login berhasil.
+
+Token digunakan untuk mengakses endpoint yang membutuhkan login.
+Token dikirim melalui header berikut:
+
+Authorization: Bearer TOKEN_LOGIN
+
+Ganti TOKEN_LOGIN dengan token yang didapat dari response login.
+
+Database project menggunakan MySQL. Pengaturan database dapat diubah di file
+.env.
+
+## Pengujian menggunakan Postman
+
+Jalankan server Laravel terlebih dahulu. Setelah itu gunakan base URL berikut:
+
+http://127.0.0.1:8000/api
+
+Header untuk request JSON:
+
+Accept: application/json
+Content-Type: application/json
+
+Untuk endpoint yang membutuhkan login, tambahkan:
+
+Authorization: Bearer TOKEN_LOGIN
+
+## Daftar endpoint API
+
+### 1. Register user
+
+Method: POST
+
+URL:
+http://127.0.0.1:8000/api/register
+
+Login: tidak diperlukan
+
+Body raw JSON:
+
+{
+    "name": "Budi Santoso",
+    "username": "budisantoso",
+    "email": "budi@example.com",
+    "password": "password123"
+}
+
+Data yang dikirim harus memenuhi aturan berikut:
+
+- name wajib diisi;
+- username wajib diisi dan belum boleh digunakan user lain;
+- email harus valid dan belum terdaftar;
+- password minimal 8 karakter.
+
+Jika berhasil, API mengembalikan data user dengan status HTTP 201.
+
+### 2. Login user
+
+Method: POST
+
+URL:
+http://127.0.0.1:8000/api/login
+
+Login: tidak diperlukan
+
+Body raw JSON:
+
+{
+    "email": "budi@example.com",
+    "password": "password123"
+}
+
+Jika login berhasil, response berisi token. Contoh bagian response:
+
+- sukses;
+- pesan;
+- token;
+- tipe_token;
+- data_user.
+
+Salin nilai token tersebut. Token akan digunakan pada endpoint yang memerlukan
+login.
+
+### 3. Melihat semua kelas
+
+Method: GET
+
+URL:
+http://127.0.0.1:8000/api/kelas
+
+Login: tidak diperlukan
+
+Body: tidak ada
+
+Endpoint ini digunakan untuk melihat semua kelas yang tersedia.
+
+### 4. Melihat detail kelas
+
+Method: GET
+
+URL:
+http://127.0.0.1:8000/api/kelas/1
+
+Login: tidak diperlukan
+
+Body: tidak ada
+
+Angka 1 adalah contoh ID kelas. Ganti angka tersebut dengan ID kelas yang ingin
+dilihat.
+
+Jika kelas tidak ditemukan, API mengembalikan status HTTP 404.
+
+### 5. Menambahkan kelas
+
+Method: POST
+
+URL:
+http://127.0.0.1:8000/api/kelas
+
+Login: diperlukan
+
+Authorization:
+Bearer TOKEN_LOGIN
+
+Body raw JSON:
+
+{
+    "judul": "Belajar Laravel Dasar",
+    "pengajar": "Andi Wijaya",
+    "harga": 250000,
+    "kuota": 30
+}
+
+Aturan data:
+
+- judul wajib diisi;
+- pengajar wajib diisi;
+- harga harus berupa angka dan tidak boleh kurang dari 0;
+- kuota harus berupa angka bulat dan minimal 1.
+
+Saat ini semua user yang sudah login dapat menambahkan kelas. Project belum
+memiliki pembagian role admin.
+
+### 6. Mendaftar ke kelas
+
+Method: POST
+
+URL:
+http://127.0.0.1:8000/api/kelas/daftar
+
+Login: diperlukan
+
+Authorization:
+Bearer TOKEN_LOGIN
+
+Body raw JSON:
+
+{
+    "kelas_id": 1
+}
+
+kelas_id adalah ID kelas yang ingin diikuti.
+
+Saat pendaftaran berhasil, sistem akan:
+
+- memeriksa apakah kelas tersedia;
+- mengurangi kuota kelas sebanyak satu;
+- menyimpan data user yang mendaftar;
+- membuat kode pendaftaran;
+- menyimpan status pendaftaran sebagai SUKSES.
+
+Contoh kode pendaftaran:
+
+KELAS-9A21X8LP
+
+Jika kuota sudah habis, pendaftaran gagal dan API mengembalikan status HTTP
+400.
+
+### 7. Melihat kelas saya
+
+Method: GET
+
+URL:
+http://127.0.0.1:8000/api/user/kelas-saya
+
+Login: diperlukan
+
+Authorization:
+Bearer TOKEN_LOGIN
+
+Body: tidak ada
+
+Endpoint ini digunakan untuk melihat semua kelas yang sudah didaftarkan oleh
+user yang sedang login.
+
+User tidak perlu mengirimkan user_id karena sistem sudah mengenali user dari
+token.
+
+### 8. Melihat profil user
+
+Method: GET
+
+URL:
+http://127.0.0.1:8000/api/user/profile
+
+Login: diperlukan
+
+Authorization:
+Bearer TOKEN_LOGIN
+
+Body: tidak ada
+
+Endpoint ini digunakan untuk melihat data user yang sedang login.
+
+### 9. Logout
+
+Method: POST
+
+URL:
+http://127.0.0.1:8000/api/logout
+
+Login: diperlukan
+
+Authorization:
+Bearer TOKEN_LOGIN
+
+Body: tidak ada
+
+Logout akan menghapus token yang sedang digunakan. Setelah logout, token
+tersebut tidak dapat digunakan lagi untuk mengakses endpoint yang dilindungi.
+
+## Urutan pengujian di Postman
+
+Urutan pengujian yang disarankan adalah:
+
+1. Register user.
+2. Login user.
+3. Salin token dari response login.
+4. Lihat semua kelas.
+5. Lihat detail kelas.
+6. Tambahkan kelas jika diperlukan.
+7. Daftar ke salah satu kelas.
+8. Lihat kelas saya.
+9. Lihat profil user.
+10. Logout.
+
+## Penjelasan body request
+
+Body adalah data yang dikirim ke server.
+
+Body diperlukan pada request berikut:
+
+- register, karena mengirim data user;
+- login, karena mengirim email dan password;
+- tambah kelas, karena mengirim data kelas;
+- daftar kelas, karena mengirim kelas_id.
+
+Body tidak diperlukan pada request berikut:
+
+- daftar semua kelas;
+- detail kelas;
+- kelas saya;
+- profil user;
+- logout.
+
+Pada detail kelas, ID kelas sudah ditulis di URL. Pada endpoint kelas saya dan
+profil, user sudah dikenali dari token. Pada logout, token digunakan untuk
+menentukan token yang akan dihapus.
+
+## Catatan project
+
+Fitur yang tersedia pada project ini adalah:
+
+- register;
+- login;
+- logout;
+- profil user;
+- daftar kelas;
+- detail kelas;
+- tambah kelas;
+- pendaftaran kelas;
+- melihat kelas yang sudah didaftarkan.
+
+Project ini belum memiliki fitur event, tiket, pembayaran, payment gateway,
+callback pembayaran, update profil, dan role admin.
